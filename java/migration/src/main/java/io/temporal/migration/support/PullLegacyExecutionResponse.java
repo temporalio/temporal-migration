@@ -6,6 +6,7 @@ public class PullLegacyExecutionResponse {
     private WorkflowExecutionStatus status;
     private Object migrationState;
     private boolean isResumable;
+    private int elapsedTime;
 
     public PullLegacyExecutionResponse() {
     }
@@ -38,5 +39,13 @@ public class PullLegacyExecutionResponse {
 
     public void setResumable(boolean resumable) {
         isResumable = resumable;
+    }
+
+    public int getElapsedTime() {
+        return elapsedTime;
+    }
+
+    public void setElapsedTime(int elapsedTime) {
+        this.elapsedTime = elapsedTime;
     }
 }

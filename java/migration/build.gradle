@@ -12,8 +12,17 @@ repositories {
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    implementation "io.temporal:temporal-spring-boot-starter-alpha:1.23.1"
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.mockito:mockito-core:5.11.0"
 
+    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    implementation "io.temporal:temporal-spring-boot-starter-alpha:1.23.1"
+    implementation "io.github.thibaultmeyer:cuid:2.0.2"
 }
 
 test {

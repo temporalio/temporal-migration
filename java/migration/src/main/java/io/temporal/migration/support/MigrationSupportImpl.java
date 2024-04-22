@@ -3,32 +3,36 @@ package io.temporal.migration.support;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.temporal.activity.Activity;
-import io.temporal.activity.ActivityInterface;
 import io.temporal.api.enums.v1.WorkflowExecutionStatus;
 import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionRequest;
 import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionResponse;
 import io.temporal.api.workflowservice.v1.WorkflowServiceGrpc;
 import io.temporal.client.WorkflowClient;
+import io.temporal.client.WorkflowOptions;
 import io.temporal.client.WorkflowStub;
 import io.temporal.failure.ApplicationFailure;
 import io.temporal.serviceclient.WorkflowServiceStubs;
+import io.temporal.spring.boot.ActivityImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-@ActivityInterface
+@ActivityImpl
 @Component
 public class MigrationSupportImpl implements MigrationSupport {
     private static Logger logger = LoggerFactory.getLogger(MigrationSupportImpl.class);
 
-    private final WorkflowClient legacyWorkflowClient;
-    private final String migrationStateQueryName;
+    private  WorkflowClient legacyWorkflowClient;
+    private WorkflowClient targetWorkflowClient;
+    private  String migrationStateQueryName;
 
-    public MigrationSupportImpl(WorkflowClient legacyWorkflowClient, String migrationStateQueryName) {
+    public MigrationSupportImpl(WorkflowClient legacyWorkflowClient, WorkflowClient targetWorkflowClient, @Value("${spring.migration.state-query-name}") String migrationStateQueryName) {
         this.legacyWorkflowClient = legacyWorkflowClient;
+        this.targetWorkflowClient = targetWorkflowClient;
         this.migrationStateQueryName = migrationStateQueryName;
     }
 
@@ -44,6 +48,9 @@ public class MigrationSupportImpl implements MigrationSupport {
     @Override
     public PullLegacyExecutionResponse pullLegacyExecutionInfo(PullLegacyExecutionRequest cmd) {
 
+        if(cmd.getPollingDurationSecs() == 0) {
+            cmd.setPollingDurationSecs(2);
+        }
         if (Objects.equals(cmd.getNamespace(), "")) {
             cmd.setNamespace(this.legacyWorkflowClient.getOptions().getNamespace());
         }
@@ -70,7 +77,8 @@ public class MigrationSupportImpl implements MigrationSupport {
                     resp.setResumable(true);
                     return resp;
                 }
-                sleep(3);
+                sleep(cmd.getPollingDurationSecs());
+                resp.setElapsedTime(resp.getElapsedTime() + cmd.getPollingDurationSecs());
             } catch (StatusRuntimeException e) {
                 Status.Code rstat = e.getStatus().getCode();
                 if (Objects.requireNonNull(rstat) == Status.Code.NOT_FOUND) {
@@ -78,5 +86,40 @@ public class MigrationSupportImpl implements MigrationSupport {
                 }
             }
         }
+    }
+
+    @Override
+    public ResumeInTargetResponse resumeInTarget(ResumeInTargetRequest cmd) {
+
+        // check that execution in target exists
+        WorkflowStub targetWF = this.
+                targetWorkflowClient.
+                newUntypedWorkflowStub(cmd.getWorkflowId());
+        WorkflowServiceStubs svc = this.targetWorkflowClient.getWorkflowServiceStubs();
+        WorkflowServiceGrpc.WorkflowServiceBlockingStub stub = svc.blockingStub();
+        DescribeWorkflowExecutionRequest req = DescribeWorkflowExecutionRequest.newBuilder().
+                setNamespace(this.targetWorkflowClient.getOptions().getNamespace()).
+                setExecution(targetWF.getExecution()).build();
+        ResumeInTargetResponse resp = new ResumeInTargetResponse();
+        try {
+            DescribeWorkflowExecutionResponse ignore = stub.describeWorkflowExecution(req);
+        } catch(StatusRuntimeException e) {
+            if(e.getStatus().getCode() == Status.Code.NOT_FOUND) {
+                logger.info("workflow {} not found.starting in target", cmd.getWorkflowId());
+                WorkflowStub workflow = this.targetWorkflowClient.newUntypedWorkflowStub(cmd.getWorkflowType(),
+                        WorkflowOptions.newBuilder().
+                                setWorkflowId(cmd.getWorkflowId()).
+                                setTaskQueue(cmd.getTaskQueue()).
+                                build());
+                workflow.start(cmd.getArguments());
+                resp.setStarted(true);
+                return resp;
+            }
+            throw e;
+        } catch(Exception e) {
+            logger.error("failed to resumeInTarget", e);
+            throw e;
+        }
+        return resp;
     }
 }
