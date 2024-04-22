@@ -89,7 +89,7 @@ public class MigrationSupportImpl implements MigrationSupport {
     }
 
     @Override
-    public ResumeInTargetResponse resumeInTarget(ResumeInTargetRequest cmd) {
+    public PushTargetExecutionResponse pushToTargetExecution(PushTargetExecutionRequest cmd) {
 
         // check that execution in target exists
         WorkflowStub targetWF = this.
@@ -100,7 +100,7 @@ public class MigrationSupportImpl implements MigrationSupport {
         DescribeWorkflowExecutionRequest req = DescribeWorkflowExecutionRequest.newBuilder().
                 setNamespace(this.targetWorkflowClient.getOptions().getNamespace()).
                 setExecution(targetWF.getExecution()).build();
-        ResumeInTargetResponse resp = new ResumeInTargetResponse();
+        PushTargetExecutionResponse resp = new PushTargetExecutionResponse();
         try {
             DescribeWorkflowExecutionResponse ignore = stub.describeWorkflowExecution(req);
         } catch(StatusRuntimeException e) {

@@ -59,15 +59,13 @@ public class MigrationSupportTest {
     @Test
     public void testPullLegacyExecution() {
         String wfid = UUID.randomUUID().toString();
-        // this is unfortunate...you can only test on `default` task queue
-        String taskQueue = "default";
         PullLegacyExecutionRequest cmd = new PullLegacyExecutionRequest("default",
                 wfid,
                 "MigrateableWorkflow", 1);
 
         // start legacy workflow
         MigrateableWorkflow wf = workflowClient.newWorkflowStub(MigrateableWorkflow.class,
-                WorkflowOptions.newBuilder().setWorkflowId(cmd.getWorkflowId()).setTaskQueue(taskQueue).build());
+                WorkflowOptions.newBuilder().setWorkflowId(cmd.getWorkflowId()).setTaskQueue(MigrateableWorkflowImpl.taskQueue).build());
         MigrateableWorkflowParams params = new MigrateableWorkflowParams(UUID.randomUUID().toString(), 3);
         WorkflowExecution legacyExecution = WorkflowClient.start(wf::execute, params);
 
@@ -89,7 +87,7 @@ public class MigrationSupportTest {
         String wfid = UUID.randomUUID().toString();
         String namespace = testWorkflowEnvironment.getNamespace();
         Object args = new MigrateableWorkflowParams(UUID.randomUUID().toString(),3);
-        ResumeInTargetRequest cmd = new ResumeInTargetRequest(
+        PushTargetExecutionRequest cmd = new PushTargetExecutionRequest(
                 namespace,
                 MigratedWorkflowImpl.taskQueue,
                 "MigrateableWorkflow",
@@ -97,7 +95,7 @@ public class MigrationSupportTest {
                 args
         );
         MigrationSupport actStub = testActivityEnvironment.newActivityStub(MigrationSupport.class);
-        ResumeInTargetResponse resp = actStub.resumeInTarget(cmd);
+        PushTargetExecutionResponse resp = actStub.pushToTargetExecution(cmd);
         Assertions.assertTrue(resp.isStarted());
         MigrateableWorkflow wf = workflowClient.newWorkflowStub(MigrateableWorkflow.class,cmd.getWorkflowId());
         MigrationState targetState = wf.getMigrationState();

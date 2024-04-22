@@ -1,13 +1,13 @@
 package io.temporal.migration.support;
 
-public class ResumeInTargetRequest {
-    private Object arguments;
+public class PushTargetExecutionRequest {
+    private Object[] arguments;
     private  String namespace;
     private  String taskQueue;
     private  String workflowType;
     private  String workflowId;
 
-    public ResumeInTargetRequest(String namespace, String taskQueue, String workflowType, String workflowId, Object arguments) {
+    public PushTargetExecutionRequest(String namespace, String taskQueue, String workflowType, String workflowId, Object ...arguments) {
 
         this.namespace = namespace;
         this.taskQueue = taskQueue;
@@ -16,7 +16,7 @@ public class ResumeInTargetRequest {
         this.arguments = arguments;
     }
 
-    public ResumeInTargetRequest() {
+    public PushTargetExecutionRequest() {
     }
 
     public String getNamespace() {
@@ -51,11 +51,11 @@ public class ResumeInTargetRequest {
         this.workflowId = workflowId;
     }
 
-    public Object getArguments() {
+    public Object[] getArguments() {
         return arguments;
     }
 
-    public void setArguments(Object arguments) {
+    public void setArguments(Object ...arguments) {
         this.arguments = arguments;
     }
 }

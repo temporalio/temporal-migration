@@ -4,6 +4,7 @@ import io.temporal.common.interceptors.WorkflowInboundCallsInterceptor;
 import io.temporal.common.interceptors.WorkflowInboundCallsInterceptorBase;
 import io.temporal.common.interceptors.WorkflowOutboundCallsInterceptor;
 import io.temporal.failure.CanceledFailure;
+import io.temporal.migration.support.PushTargetExecutionRequest;
 import io.temporal.workflow.CancellationScope;
 import io.temporal.workflow.Workflow;
 import io.temporal.workflow.WorkflowInfo;
@@ -48,12 +49,18 @@ public class MigrationWorkflowInboundCallsInterceptor extends WorkflowInboundCal
             scope.run();
             return value.get();
         } catch( CanceledFailure e) {
-            Workflow.newDetachedCancellationScope(() -> {
+//            Workflow.newDetachedCancellationScope(() -> {
                 QueryOutput q = handleQuery(new QueryInput(migrationQueryName, null, null));
-                Object migrateableValue = new WorkflowOutput(q.getResult());
-                migrator.migrate(new MigrateCommand(info.getWorkflowType(), info.getWorkflowId(), migrateableValue));
+                PushTargetExecutionRequest request = new PushTargetExecutionRequest(
+                        info.getNamespace(),
+                        info.getTaskQueue(),
+                        info.getWorkflowType(),
+                        info.getWorkflowId(),
+                        q.getResult()
+                );
+                migrator.migrate(request);
                 this.migrated.set(true);
-            }).run();
+//            }).run();
             return value.get();
         }
     }
@@ -62,18 +69,4 @@ public class MigrationWorkflowInboundCallsInterceptor extends WorkflowInboundCal
     1. test cases for longrunning activity...what happens within a workflow that has such a thing?
     2. test long running signal handlers that are not returning
      */
-
-    @Override
-    public void handleSignal(SignalInput input) {
-        WorkflowInfo info = Workflow.getInfo();
-        if(!migrated.get()) {
-            super.handleSignal(input);
-            return;
-        }
-        logger.info("forwarding signal {} for wid {} with {}", input.getSignalName(),info.getWorkflowId(), input.getArguments());
-        migrator.forwardSignal(new ForwardSignalCommand(info.getWorkflowType(),
-                info.getWorkflowId(),
-                input.getSignalName(),
-                input.getArguments()));
-    }
 }

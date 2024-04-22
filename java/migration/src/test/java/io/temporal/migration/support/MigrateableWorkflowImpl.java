@@ -5,8 +5,9 @@ import io.temporal.workflow.Workflow;
 
 import java.time.Duration;
 
-@WorkflowImpl(taskQueues = "default")
+@WorkflowImpl(taskQueues = MigrateableWorkflowImpl.taskQueue)
 public class MigrateableWorkflowImpl implements MigrateableWorkflow{
+    public static final String taskQueue = "default";
     private MigrateableWorkflowParams params;
 
     @Override

@@ -9,5 +9,5 @@ public interface MigrationSupport {
     PullLegacyExecutionResponse pullLegacyExecutionInfo(PullLegacyExecutionRequest req);
 
     @ActivityMethod
-    public ResumeInTargetResponse resumeInTarget(ResumeInTargetRequest cmd);
+    PushTargetExecutionResponse pushToTargetExecution(PushTargetExecutionRequest cmd);
 }

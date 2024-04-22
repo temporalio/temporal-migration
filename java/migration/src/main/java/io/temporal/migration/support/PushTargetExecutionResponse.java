@@ -1,9 +1,9 @@
 package io.temporal.migration.support;
 
-public class ResumeInTargetResponse {
+public class PushTargetExecutionResponse {
     private boolean isStarted;
 
-    public ResumeInTargetResponse() {
+    public PushTargetExecutionResponse() {
     }
 
 
