@@ -18,11 +18,11 @@ import java.util.List;
 import java.util.Objects;
 
 @Component
-public class MigratorImpl implements Migrator{
+public class MigratorImpl { // implements Migrator{
 
     Logger logger = LoggerFactory.getLogger(MigratorImpl.class);
     public static List<PushTargetExecutionRequest> pushRequests = new ArrayList<>();
-    @Override
+//    @Override
     public void migrate(PushTargetExecutionRequest cmd) {
         // here we can inspect arguments to validate the push to the target
         // or we can ignore the migration altogether
@@ -37,7 +37,7 @@ public class MigratorImpl implements Migrator{
 //        stub.pushToTargetExecution(cmd);
     }
 
-    @Override
+//    @Override
     public boolean isMigrateable(WorkflowInfo info) {
         return Objects.equals(info.getWorkflowType() ,"MigrateableWorkflow");
     }

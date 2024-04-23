@@ -1,5 +1,8 @@
 package io.temporal.migration.support;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 public class PushTargetExecutionRequest {
     private Object[] arguments;
     private  String namespace;
@@ -57,5 +60,20 @@ public class PushTargetExecutionRequest {
 
     public void setArguments(Object ...arguments) {
         this.arguments = arguments;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PushTargetExecutionRequest that = (PushTargetExecutionRequest) o;
+        return Arrays.equals(arguments, that.arguments) && Objects.equals(namespace, that.namespace) && Objects.equals(taskQueue, that.taskQueue) && Objects.equals(workflowType, that.workflowType) && Objects.equals(workflowId, that.workflowId);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(namespace, taskQueue, workflowType, workflowId);
+        result = 31 * result + Arrays.hashCode(arguments);
+        return result;
     }
 }

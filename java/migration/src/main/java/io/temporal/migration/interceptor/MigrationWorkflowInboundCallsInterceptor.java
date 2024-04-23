@@ -49,7 +49,7 @@ public class MigrationWorkflowInboundCallsInterceptor extends WorkflowInboundCal
             scope.run();
             return value.get();
         } catch( CanceledFailure e) {
-//            Workflow.newDetachedCancellationScope(() -> {
+            Workflow.newDetachedCancellationScope(() -> {
                 QueryOutput q = handleQuery(new QueryInput(migrationQueryName, null, null));
                 PushTargetExecutionRequest request = new PushTargetExecutionRequest(
                         info.getNamespace(),
@@ -60,7 +60,7 @@ public class MigrationWorkflowInboundCallsInterceptor extends WorkflowInboundCal
                 );
                 migrator.migrate(request);
                 this.migrated.set(true);
-//            }).run();
+            }).run();
             return value.get();
         }
     }

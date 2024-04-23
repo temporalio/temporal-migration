@@ -16,18 +16,25 @@ import io.temporal.testing.TestWorkflowEnvironment;
 import org.junit.Assert;
 import org.junit.jupiter.api.*;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+
+import static org.mockito.Mockito.*;
 
 @SpringBootTest(classes = {
         MigrationWorkerInterceptorImplTest.Configuration.class,
@@ -48,11 +55,8 @@ public class MigrationWorkerInterceptorImplTest {
     @Autowired
     TestWorkflowEnvironment testWorkflowEnvironment;
 
-    @Autowired
-    MigrationSupport sut;
-
-
-    TestActivityEnvironment testActivityEnvironment;
+    @MockBean
+    Migrator migrator;
 
     @Autowired
     WorkflowClient workflowClient;
@@ -63,13 +67,6 @@ public class MigrationWorkerInterceptorImplTest {
     }
     @BeforeEach
     void beforeEach() {
-        testActivityEnvironment = TestActivityEnvironment.newInstance(
-                TestEnvironmentOptions.newBuilder()
-                        .setUseTimeskipping(true)
-                        .build()
-        );
-        testActivityEnvironment.registerActivitiesImplementations(sut);
-
         applicationContext.start();
     }
 
@@ -81,6 +78,9 @@ public class MigrationWorkerInterceptorImplTest {
                 wfid,
                 "MigrateableWorkflow",
                 1);
+
+        // always make execution subject to interceptor logic
+        when(migrator.isMigrateable(Mockito.any())).thenReturn(true);
 
         // start legacy workflow
         MigrateableWorkflow wf = workflowClient.newWorkflowStub(MigrateableWorkflow.class,
@@ -97,6 +97,25 @@ public class MigrationWorkerInterceptorImplTest {
         workflowStub.signal(MigrationWorkflowInterceptorListener.migrationSignalName);
 
         testWorkflowEnvironment.sleep(Duration.ofSeconds(2));
+
+        MigrationState mstate = new MigrationState();
+        mstate.setParams(params);
+        mstate.setExecutionState(new ExecutionState(true));
+        PushTargetExecutionRequest expectMigrationArgs = new PushTargetExecutionRequest(
+                workflowClient.getOptions().getNamespace(),
+                MigrateableWorkflowImpl.taskQueue,
+                "MigrateableWorkflow",
+                wfid,
+                mstate
+        );
+
+        verify(migrator, times(1)).isMigrateable(Mockito.any());
+        verify(migrator, times(1)).migrate(argThat((arg) -> {
+            return Objects.equals(arg.getWorkflowId(), wfid) &&
+                    Objects.equals(arg.getTaskQueue(), MigrateableWorkflowImpl.taskQueue) &&
+                    Objects.equals(arg.getWorkflowType(), "MigrateableWorkflow");
+        }));
+
         WorkflowServiceStubs svc = workflowClient.getWorkflowServiceStubs();
         WorkflowServiceGrpc.WorkflowServiceBlockingStub stub = svc.blockingStub();
         DescribeWorkflowExecutionRequest req = DescribeWorkflowExecutionRequest.newBuilder().
@@ -104,7 +123,8 @@ public class MigrationWorkerInterceptorImplTest {
                 setExecution(workflowStub.getExecution()).build();
         DescribeWorkflowExecutionResponse describeWorkflowExecutionResponse = stub.describeWorkflowExecution(req);
         Assertions.assertEquals(WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_COMPLETED,describeWorkflowExecutionResponse.getWorkflowExecutionInfo().getStatus());
-        Assertions.assertEquals(1, MigratorImpl.pushRequests.size());
+
+
         try {
             MigrateableWorkflowResult migrateableWorkflowResult = resultFuture.get();
         } catch (InterruptedException e) {
