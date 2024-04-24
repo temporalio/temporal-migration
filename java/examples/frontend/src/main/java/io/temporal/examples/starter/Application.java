@@ -1,4 +1,4 @@
-package io.temporal.examples.frontend;
+package io.temporal.examples.starter;
 
 import io.temporal.client.WorkflowClient;
 import org.slf4j.Logger;
@@ -20,7 +20,7 @@ public class Application implements CommandLineRunner {
         // to which we route replies from our domain.
         // NOTE that ${random.uuid} in properties will not work since you receive a new random value per-component under SpringBoot's creation
         System.setProperty("APP_UUID", UUID.randomUUID().toString());
-        SpringApplication.run(io.temporal.examples.backend.Application.class, args);
+        SpringApplication.run(io.temporal.examples.starter.Application.class, args);
     }
 
     @Autowired
@@ -39,6 +39,8 @@ public class Application implements CommandLineRunner {
     public void run(String... args) throws Exception {
         WorkflowClient legacy = clients.getLegacyClient();
         String foo = "bar";
+        logger.info("idSeed {}", idSeed);
+        logger.info("legacyTaskQueue {}", legacyTaskQueue);
 //        try {
 //            for (int i = 0; i < executionCount; i++) {
 //                String wid = String.format("%s-%d", idSeed, i);

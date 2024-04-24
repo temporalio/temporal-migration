@@ -3,6 +3,7 @@ server:
 app:
   execution-count: 100
   id-seed: mig
+  signal-frequency-millis: 100
   temporal:
     legacy:
       task-queue: default

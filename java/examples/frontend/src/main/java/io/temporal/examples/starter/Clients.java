@@ -1,4 +1,4 @@
-package io.temporal.examples.frontend;
+package io.temporal.examples.starter;
 
 import io.temporal.client.WorkflowClient;
 

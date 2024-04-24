@@ -21,8 +21,7 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-@ActivityImpl
-@Component
+@Component("migration-support")
 public class MigrationSupportImpl implements MigrationSupport {
     private static Logger logger = LoggerFactory.getLogger(MigrationSupportImpl.class);
 
