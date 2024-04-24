@@ -14,7 +14,6 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation "io.temporal:temporal-spring-boot-starter-alpha:1.23.1"
     implementation project(':migration')
-
 }
 
 test {

@@ -20,4 +20,9 @@ public class MigratedWorkflowImpl implements MigrateableWorkflow{
         out.setExecutionState(new ExecutionState(true));
         return out;
     }
+
+    @Override
+    public void mySimpleSignal() {
+
+    }
 }

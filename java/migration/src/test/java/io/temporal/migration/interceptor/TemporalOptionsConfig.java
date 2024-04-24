@@ -1,6 +1,7 @@
 package io.temporal.migration.interceptor;
 
 
+import io.temporal.client.WorkflowClientOptions;
 import io.temporal.spring.boot.TemporalOptionsCustomizer;
 import io.temporal.worker.WorkerFactoryOptions;
 import org.slf4j.Logger;
@@ -62,6 +63,7 @@ public class TemporalOptionsConfig {
 //            @Override
 //            public WorkflowClientOptions.Builder customize(
 //                    @Nonnull WorkflowClientOptions.Builder optionsBuilder) {
+//
 //
 //                // with CODEC
 ////                optionsBuilder.setDataConverter(new CodecDataConverter(DefaultDataConverter.newDefaultInstance(), Collections.singletonList(payloadCodec)));

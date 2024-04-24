@@ -11,6 +11,8 @@
           <set>
             <option value="$PROJECT_DIR$/java" />
             <option value="$PROJECT_DIR$/java/examples" />
+            <option value="$PROJECT_DIR$/java/examples/backend" />
+            <option value="$PROJECT_DIR$/java/examples/frontend" />
             <option value="$PROJECT_DIR$/java/migration" />
           </set>
         </option>

@@ -71,7 +71,7 @@ public class MigrationWorkerInterceptorImplTest {
     }
 
     @Test
-    public void testCancellationPushesToTarget() {
+    public void givenSimpleCase_testCancellationPushesToTarget() {
         String wfid = UUID.randomUUID().toString();
         PullLegacyExecutionRequest cmd = new PullLegacyExecutionRequest(
                 "default",
@@ -89,7 +89,6 @@ public class MigrationWorkerInterceptorImplTest {
                         setTaskQueue(MigrateableWorkflowImpl.taskQueue).
                         build());
         MigrateableWorkflowParams params = new MigrateableWorkflowParams(UUID.randomUUID().toString(), 10);
-        //wf.execute(params);
         CompletableFuture<MigrateableWorkflowResult> resultFuture = WorkflowClient.execute(wf::execute, params);
         testWorkflowEnvironment.sleep(Duration.ofSeconds(2));
 
@@ -124,6 +123,74 @@ public class MigrationWorkerInterceptorImplTest {
         DescribeWorkflowExecutionResponse describeWorkflowExecutionResponse = stub.describeWorkflowExecution(req);
         Assertions.assertEquals(WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_COMPLETED,describeWorkflowExecutionResponse.getWorkflowExecutionInfo().getStatus());
 
+
+        try {
+            MigrateableWorkflowResult migrateableWorkflowResult = resultFuture.get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void givenFloodOfSignals_testCancellationPushesToTarget() {
+        String wfid = UUID.randomUUID().toString();
+        PullLegacyExecutionRequest cmd = new PullLegacyExecutionRequest(
+                "default",
+                wfid,
+                "MigrateableWorkflow",
+                1);
+
+        // always make execution subject to interceptor logic
+        when(migrator.isMigrateable(Mockito.any())).thenReturn(true);
+
+        // start legacy workflow
+        MigrateableWorkflow wf = workflowClient.newWorkflowStub(MigrateableWorkflow.class,
+                WorkflowOptions.newBuilder().
+                        setWorkflowId(cmd.getWorkflowId()).
+                        setTaskQueue(MigrateableWorkflowImpl.taskQueue).
+                        build());
+        MigrateableWorkflowParams params = new MigrateableWorkflowParams(UUID.randomUUID().toString(), 10);
+        CompletableFuture<MigrateableWorkflowResult> resultFuture = WorkflowClient.execute(wf::execute, params);
+        testWorkflowEnvironment.sleep(Duration.ofSeconds(2));
+
+        WorkflowStub workflowStub = workflowClient.newUntypedWorkflowStub(wfid);
+        for(int i =0; i < 400; i++) {
+            workflowStub.signal("MySimpleSignal");
+        }
+        workflowStub.signal(MigrationWorkflowInterceptorListener.migrationSignalName);
+        for(int i =0; i < 200; i++) {
+            workflowStub.signal("MySimpleSignal");
+        }
+
+        testWorkflowEnvironment.sleep(Duration.ofSeconds(2));
+
+        MigrationState mstate = new MigrationState();
+        mstate.setParams(params);
+        mstate.setExecutionState(new ExecutionState(true));
+        PushTargetExecutionRequest expectMigrationArgs = new PushTargetExecutionRequest(
+                workflowClient.getOptions().getNamespace(),
+                MigrateableWorkflowImpl.taskQueue,
+                "MigrateableWorkflow",
+                wfid,
+                mstate
+        );
+
+        //verify(migrator, times(1)).isMigrateable(Mockito.any());
+        verify(migrator, atLeastOnce()).migrate(argThat((arg) -> {
+            return Objects.equals(arg.getWorkflowId(), wfid) &&
+                    Objects.equals(arg.getTaskQueue(), MigrateableWorkflowImpl.taskQueue) &&
+                    Objects.equals(arg.getWorkflowType(), "MigrateableWorkflow");
+        }));
+
+        WorkflowServiceStubs svc = workflowClient.getWorkflowServiceStubs();
+        WorkflowServiceGrpc.WorkflowServiceBlockingStub stub = svc.blockingStub();
+        DescribeWorkflowExecutionRequest req = DescribeWorkflowExecutionRequest.newBuilder().
+                setNamespace(this.workflowClient.getOptions().getNamespace()).
+                setExecution(workflowStub.getExecution()).build();
+        DescribeWorkflowExecutionResponse describeWorkflowExecutionResponse = stub.describeWorkflowExecution(req);
+        Assertions.assertEquals(WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_COMPLETED,describeWorkflowExecutionResponse.getWorkflowExecutionInfo().getStatus());
 
         try {
             MigrateableWorkflowResult migrateableWorkflowResult = resultFuture.get();

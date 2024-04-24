@@ -1,4 +1,4 @@
-package io.temporal.migration.support;
+package io.temporal.examples.backend;
 
 import io.temporal.workflow.QueryMethod;
 import io.temporal.workflow.SignalMethod;
@@ -11,8 +11,8 @@ public interface MigrateableWorkflow {
     MigrateableWorkflowResult execute(MigrateableWorkflowParams params);
 
     @QueryMethod
-    MigrationState getMigrationState();
+    MigrateableWorkflowParams getMigrationState();
 
     @SignalMethod
-    void mySimpleSignal();
+    void setValue(String value);
 }
