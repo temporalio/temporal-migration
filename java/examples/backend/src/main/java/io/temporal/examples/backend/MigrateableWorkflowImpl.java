@@ -10,10 +10,17 @@ public class MigrateableWorkflowImpl implements MigrateableWorkflow {
     public static final String taskQueue = "default";
     private MigrateableWorkflowParams params;
 
+    public MigrateableWorkflowImpl() {
+        this.params = new MigrateableWorkflowParams();
+        this.params.setValue("EMPTY");
+        this.params.setExecutionState(new ExecutionState(false));
+    }
+
     @Override
     public MigrateableWorkflowResult execute(MigrateableWorkflowParams params) {
         MigrateableWorkflowResult result = new MigrateableWorkflowResult();
-        this.params = params;
+        this.params.setValue(params.getValue());
+        this.params.setExecutionState(params.getExecutionState());
         result.setValue(params.getValue());
         Workflow.sleep(Duration.ofSeconds(params.getKeepAliveDurationSecs()));
         return result;

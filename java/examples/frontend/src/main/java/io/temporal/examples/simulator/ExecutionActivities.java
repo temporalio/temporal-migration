@@ -8,5 +8,5 @@ import java.util.List;
 @ActivityInterface
 public interface ExecutionActivities {
     @ActivityMethod
-    List<String> getWorkflowIDs();
+    List<String> getWorkflowIDs(String workflowType);
 }

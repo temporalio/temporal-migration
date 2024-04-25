@@ -15,6 +15,7 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'io.temporal:temporal-sdk:1.23.1'
+    implementation "io.temporal:temporal-spring-boot-starter-alpha:1.23.1"
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation project(':examples:backend')

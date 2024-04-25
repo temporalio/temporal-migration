@@ -15,6 +15,7 @@ import io.temporal.serviceclient.WorkflowServiceStubs;
 import io.temporal.spring.boot.ActivityImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -29,7 +30,9 @@ public class MigrationSupportImpl implements MigrationSupport {
     private WorkflowClient targetWorkflowClient;
     private  String migrationStateQueryName;
 
-    public MigrationSupportImpl(WorkflowClient legacyWorkflowClient, WorkflowClient targetWorkflowClient, @Value("${spring.migration.state-query-name}") String migrationStateQueryName) {
+    public MigrationSupportImpl(@Qualifier("legacyTemporalWorkflowClient") WorkflowClient legacyWorkflowClient,
+                                @Qualifier("temporalWorkflowClient") WorkflowClient targetWorkflowClient,
+                                @Value("${spring.migration.state-query-name}") String migrationStateQueryName) {
         this.legacyWorkflowClient = legacyWorkflowClient;
         this.targetWorkflowClient = targetWorkflowClient;
         this.migrationStateQueryName = migrationStateQueryName;

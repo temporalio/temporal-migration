@@ -1,6 +1,7 @@
 package io.temporal.examples.simulator;
 
 import io.temporal.activity.ActivityOptions;
+import io.temporal.spring.boot.WorkflowImpl;
 import io.temporal.workflow.Async;
 import io.temporal.workflow.Promise;
 import io.temporal.workflow.Workflow;
@@ -12,9 +13,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@WorkflowImpl(taskQueues = SimulationWorkflowImpl.taskQueue)
 public class SimulationWorkflowImpl implements SimulationWorkflow {
-    private static final Logger logger = Workflow.getLogger(SimulationWorkflowImpl.class);
 
+    public static final String taskQueue = "simulation";
+    private static final Logger logger = Workflow.getLogger(SimulationWorkflowImpl.class);
 
     private Map<String, String> lastValues;
     private final ExecutionActivities executionActivities = Workflow.newActivityStub(
@@ -28,17 +31,17 @@ public class SimulationWorkflowImpl implements SimulationWorkflow {
     @Override
     public void simulate(SimulationWorkflowParams params) {
         this.lastValues = new HashMap<>();
-        List<String> executions = executionActivities.getWorkflowIDs();
+        List<String> executions = executionActivities.getWorkflowIDs(params.getWorkflowType());
         List<Promise<String>> promises = new ArrayList<>();
 
         if (params.isFailover()) {
             for (String id : executions) {
-                promises.add(Async.function(signalActivities::signalUntilAndAfterMigrated, id).
+                promises.add(Async.function(signalActivities::signalUntilAndAfterMigrated, new SignalParams(id, params.getSignalFrequencyMillis())).
                         thenApply(lastValue -> lastValues.put(lastValue.getWorkflowId(), lastValue.getValue())));
             }
         } else {
             for (String id : executions) {
-                promises.add(Async.function(signalActivities::signalUntilClosed, id).
+                promises.add(Async.function(signalActivities::signalUntilClosed, new SignalParams(id, params.getSignalFrequencyMillis())).
                         thenApply(lastValue -> lastValues.put(lastValue.getWorkflowId(), lastValue.getValue())));
             }
         }

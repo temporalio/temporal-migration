@@ -19,6 +19,10 @@ public class MigratedWorkflowImpl implements MigrateableWorkflow {
     private MigrateableWorkflowParams params;
 
     public MigratedWorkflowImpl() {
+        this.params = new MigrateableWorkflowParams();
+        this.params.setValue("EMPTY");
+        this.params.setExecutionState(new ExecutionState(false));
+
         this.acts = Workflow.newActivityStub(
                 MigrationSupport.class,
                 ActivityOptions.

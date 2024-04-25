@@ -4,7 +4,7 @@ spring:
   main:
     allow-bean-definition-overriding: true
   application:
-    name: temporal-migration
+    name: temporal-migration-legacy
   temporal:
     workers:
       - task-queue: default

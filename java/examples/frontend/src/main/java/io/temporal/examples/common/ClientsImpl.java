@@ -1,10 +1,11 @@
-package io.temporal.examples.starter;
+package io.temporal.examples.common;
 
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowClientOptions;
 import io.temporal.serviceclient.SimpleSslContextBuilder;
 import io.temporal.serviceclient.WorkflowServiceStubs;
 import io.temporal.serviceclient.WorkflowServiceStubsOptions;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -28,9 +29,9 @@ public class ClientsImpl implements Clients {
 
     private WorkflowClient legacyClient;
     private WorkflowClient targetClient;
-
-    private WorkflowClient composedClient;
     public ClientsImpl(
+            @Qualifier("legacyTemporalWorkflowClient") WorkflowClient legacyClient,
+           @Qualifier("temporalWorkflowClient") WorkflowClient targetClient,
            @Value("${app.temporal.legacy.connection.target.namespace}") String legacyNamespace,
            @Value("${app.temporal.target.connection.target}") String targetNamespace,
            @Value("${app.temporal.target.connection.target}") String targetAddress,

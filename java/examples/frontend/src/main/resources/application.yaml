@@ -27,6 +27,12 @@ spring:
     allow-bean-definition-overriding: true
   application:
     name: temporal-frontend
+  temporal:
+    workers-auto-discovery:
+      packages: io.temporal.examples.simulator
+    connection:
+      target: 127.0.0.1:7233
+      target.namespace: default
   migration:
     state-query-name: 'getMigrationState'
 

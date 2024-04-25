@@ -5,10 +5,14 @@ import io.temporal.api.workflowservice.v1.ListWorkflowExecutionsRequest;
 import io.temporal.api.workflowservice.v1.ListWorkflowExecutionsResponse;
 import io.temporal.client.WorkflowClient;
 import io.temporal.serviceclient.WorkflowServiceStubs;
+import io.temporal.spring.boot.ActivityImpl;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@ActivityImpl(taskQueues = SimulationWorkflowImpl.taskQueue)
+@Component
 public class ExecutionActivitiesImpl implements ExecutionActivities {
     private final WorkflowClient legacyNamespaceClient;
 
@@ -17,14 +21,12 @@ public class ExecutionActivitiesImpl implements ExecutionActivities {
     }
 
     @Override
-    public List<String> getWorkflowIDs() {
+    public List<String> getWorkflowIDs(String workflowType) {
         WorkflowServiceStubs service = legacyNamespaceClient.getWorkflowServiceStubs();
-        // 1. load workflowIDs to consider
-        // 2. send `callGiraffe` signal every 200ms to each workflow in the list if the workflow exists in legacy namespace
-        // 3. exit when all workflows no longer appear in legacy namespace
+        String q = String.format("WorkflowType='%s' AND ExecutionStatus='Running'", workflowType);
         ListWorkflowExecutionsRequest listRequest = ListWorkflowExecutionsRequest.newBuilder().
-                setNamespace("default").
-                setQuery("WorkflowType='LongRunningWorkflow' AND ExecutionStatus='Running'").
+                setNamespace(this.legacyNamespaceClient.getOptions().getNamespace()).
+                setQuery(q).
                 build();
         ListWorkflowExecutionsResponse listResponse = service.blockingStub().listWorkflowExecutions(listRequest);
         List<WorkflowExecutionInfo> list = listResponse.getExecutionsList();

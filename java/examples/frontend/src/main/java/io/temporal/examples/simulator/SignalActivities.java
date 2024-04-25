@@ -6,8 +6,8 @@ import io.temporal.activity.ActivityMethod;
 @ActivityInterface
 public interface SignalActivities {
     @ActivityMethod
-    LastValue signalUntilClosed(String workflowID);
+    LastValue signalUntilClosed(SignalParams params);
 
     @ActivityMethod
-    LastValue signalUntilAndAfterMigrated(String workflowID);
+    LastValue signalUntilAndAfterMigrated(SignalParams params);
 }
