@@ -1,5 +1,7 @@
 package io.temporal.migration.support;
 
+import io.temporal.api.workflowservice.v1.CountWorkflowExecutionsRequest;
+import io.temporal.api.workflowservice.v1.CountWorkflowExecutionsResponse;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowClientOptions;
 import io.temporal.serviceclient.SimpleSslContextBuilder;
@@ -72,6 +74,8 @@ public class MigrationProperties {
 
     }
     public static class Connection {
+        private String target;
+
         private MTLS mtls;
 
         public MTLS getMtls() {
@@ -80,6 +84,14 @@ public class MigrationProperties {
 
         public void setMtls(MTLS mtls) {
             this.mtls = mtls;
+        }
+
+        public String getTarget() {
+            return target;
+        }
+
+        public void setTarget(String target) {
+            this.target = target;
         }
     }
     public static class MTLS {
@@ -105,8 +117,15 @@ public class MigrationProperties {
     @Bean(name = "targetTemporalWorkflowClient")
     public WorkflowClient targetTemporalWorkflowClient() throws FileNotFoundException, SSLException {
         WorkflowServiceStubs targetService = null;
+        Target topLevelTarget = getTarget();
+        Connection connection = getTarget().getConnection();
+        String endpoint = getTarget().getConnection().getTarget();
+        if(getTarget() != null &&
+                getTarget().getConnection() != null &&
+                getTarget().getConnection().getTarget() != null &&
+                getTarget().getConnection().getMtls() != null) {
 
-        if(getTarget() != null && getTarget().getConnection() != null && getTarget().getConnection().getMtls() != null) {
+
 
             try {
                 InputStream clientCert = new FileInputStream(getTarget().getConnection().getMtls().getCertChainFile());
@@ -115,8 +134,11 @@ public class MigrationProperties {
                 targetService = WorkflowServiceStubs.newServiceStubs(
                         WorkflowServiceStubsOptions.newBuilder()
                                 .setSslContext(SimpleSslContextBuilder.forPKCS8(clientCert, clientKey).build())
-                                .setTarget(getTarget().getNamespace())
+                                .setTarget(getTarget().getConnection().getTarget())
                                 .build());
+                CountWorkflowExecutionsResponse countWorkflowExecutionsResponse = targetService.blockingStub().
+                        countWorkflowExecutions(CountWorkflowExecutionsRequest.newBuilder().
+                                setNamespace(getTarget().getNamespace()).build());
 
             } catch (IOException e) {
                 System.err.println("Error loading certificates: " + e.getMessage());
@@ -126,6 +148,7 @@ public class MigrationProperties {
                     WorkflowClientOptions.newBuilder()
                             .setNamespace(getTarget().getNamespace())
                             .build());
+
         }
         throw new RuntimeException("failed to configure a target workflow client");
     }

@@ -1,9 +1,13 @@
 package io.temporal.examples.common;
 
 import io.temporal.client.WorkflowClient;
+import io.temporal.serviceclient.WorkflowServiceStubs;
+import io.temporal.serviceclient.WorkflowServiceStubsOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 @Component
 public class ClientsImpl implements Clients {
@@ -24,6 +28,11 @@ public class ClientsImpl implements Clients {
             @Qualifier("temporalWorkflowClient") WorkflowClient legacyClient,
             @Qualifier("targetTemporalWorkflowClient") WorkflowClient targetClient
     ) {
+        if(!Objects.equals(legacyClient.getOptions().getNamespace(), "default")) {
+            legacyClient = WorkflowClient.newInstance(
+                    WorkflowServiceStubs.newServiceStubs(
+                    WorkflowServiceStubsOptions.newBuilder().build()));
+        }
         this.legacyClient = legacyClient;
         this.targetClient = targetClient;
     }
