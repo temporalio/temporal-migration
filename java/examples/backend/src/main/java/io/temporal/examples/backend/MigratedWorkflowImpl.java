@@ -27,7 +27,7 @@ public class MigratedWorkflowImpl implements MigrateableWorkflow {
                 MigrationSupport.class,
                 ActivityOptions.
                         newBuilder().
-                        setStartToCloseTimeout(Duration.ofSeconds(10)).
+                        setStartToCloseTimeout(Duration.ofSeconds(600)).
                         setHeartbeatTimeout(Duration.ofSeconds(10)).
                         build());
     }
@@ -54,6 +54,9 @@ public class MigratedWorkflowImpl implements MigrateableWorkflow {
             ObjectMapper mapper = new ObjectMapper();
             MigrateableWorkflowParams migratedParams = mapper.convertValue(pullLegacyExecutionResponse.getMigrationState(), MigrateableWorkflowParams.class);
             MigrateableWorkflow stub = Workflow.newContinueAsNewStub(MigrateableWorkflow.class);
+            if(migratedParams.getExecutionState() == null) {
+                migratedParams.setExecutionState(new ExecutionState(true));
+            }
             return stub.execute(migratedParams);
         }
 

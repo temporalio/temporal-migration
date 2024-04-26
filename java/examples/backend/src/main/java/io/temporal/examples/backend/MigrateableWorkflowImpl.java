@@ -19,6 +19,7 @@ public class MigrateableWorkflowImpl implements MigrateableWorkflow {
     @Override
     public MigrateableWorkflowResult execute(MigrateableWorkflowParams params) {
         MigrateableWorkflowResult result = new MigrateableWorkflowResult();
+        this.params.setKeepAliveDurationSecs(params.getKeepAliveDurationSecs());
         this.params.setValue(params.getValue());
         this.params.setExecutionState(params.getExecutionState());
         result.setValue(params.getValue());
