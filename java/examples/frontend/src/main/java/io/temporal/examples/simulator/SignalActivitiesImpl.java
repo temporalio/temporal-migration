@@ -8,6 +8,7 @@ import io.temporal.api.enums.v1.WorkflowExecutionStatus;
 import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionRequest;
 import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionResponse;
 import io.temporal.client.WorkflowClient;
+import io.temporal.client.WorkflowNotFoundException;
 import io.temporal.examples.backend.MigrateableWorkflow;
 import io.temporal.examples.common.Clients;
 import io.temporal.failure.ApplicationFailure;
@@ -15,6 +16,8 @@ import io.temporal.serviceclient.WorkflowServiceStubs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 @Component("signal-activities")
 public class SignalActivitiesImpl implements SignalActivities {
@@ -33,7 +36,7 @@ public class SignalActivitiesImpl implements SignalActivities {
 
         WorkflowExecutionStatus status = WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_RUNNING;
         LastValue last = new LastValue(params.getWorkflowId(), "UNDEFINED");
-        while (status == WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_RUNNING) {
+        while (Objects.equals(status,WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_RUNNING)) {
             WorkflowExecution execution = WorkflowExecution.newBuilder().setWorkflowId(params.getWorkflowId()).build();
 
             DescribeWorkflowExecutionResponse description = service.
@@ -45,7 +48,7 @@ public class SignalActivitiesImpl implements SignalActivities {
                             build());
             status = description.getWorkflowExecutionInfo().getStatus();
 
-            if (status == WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_RUNNING) {
+            if (Objects.equals(status,WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_RUNNING)) {
                 MigrateableWorkflow wf = this.legacyNamespaceClient.newWorkflowStub(MigrateableWorkflow.class, params.getWorkflowId());
 
                 String value = Simulator.now();
@@ -60,7 +63,7 @@ public class SignalActivitiesImpl implements SignalActivities {
             try {
                 Thread.sleep(params.getSignalFrequencyMillis());
             } catch (InterruptedException e) {
-                System.console().printf(e.toString());
+                logger.error(e.toString(), e);
                 return last;
             }
             Activity.getExecutionContext().heartbeat(null);
@@ -74,12 +77,15 @@ public class SignalActivitiesImpl implements SignalActivities {
     public LastValue signalUntilAndAfterMigrated(SignalParams params) {
         boolean hasMigrated = false;
         boolean signalable = true;
+        int failedLegacySignalAttempts = 0;
+        int failedTargetSignalAttempts = 0;
 
         WorkflowExecutionStatus status = WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_RUNNING;
         LastValue last = new LastValue(params.getWorkflowId(), "UNDEFINED");
+
         while (signalable) {
             String value = Simulator.now();
-            Activity.getExecutionContext().heartbeat(null);
+            Activity.getExecutionContext().heartbeat(new int[]{failedLegacySignalAttempts,failedTargetSignalAttempts});
             if (!hasMigrated) {
                 try {
                     MigrateableWorkflow wf = this.legacyNamespaceClient.newWorkflowStub(MigrateableWorkflow.class, params.getWorkflowId());
@@ -88,17 +94,19 @@ public class SignalActivitiesImpl implements SignalActivities {
                     try {
                         Thread.sleep(params.getSignalFrequencyMillis());
                     } catch (InterruptedException e) {
-                        System.console().printf(e.toString());
+                        logger.warn(e.toString(),e);
                         return last;
                     }
                     continue;
+                } catch (WorkflowNotFoundException e) {
+                    logger.warn("workflow {} not found...forwarding in target", params, e);
                 } catch (StatusRuntimeException e) {
-                    if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
+                    if (Objects.equals(e.getStatus().getCode(),Status.Code.NOT_FOUND)) {
                         logger.debug("workflow {} not found...forwarding in target", params);
                         // swallow this error
                     }
                 } catch (ApplicationFailure e) {
-                    System.console().printf(e.toString());
+                    logger.error(e.toString(), e);
                 }
             }
             try {
@@ -112,17 +120,24 @@ public class SignalActivitiesImpl implements SignalActivities {
                     System.console().printf(e.toString());
                     return last;
                 }
-            } catch (StatusRuntimeException e) {
-                if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
-                    logger.debug("workflow {} not found...forwarding in target", params);
-                    // swallow this error
+            } catch(WorkflowNotFoundException e) {
+                logger.warn("workflow {} not found in target", params);
+                failedTargetSignalAttempts = failedTargetSignalAttempts + 1;
+                if(failedTargetSignalAttempts > 10) {
                     signalable = false;
+                }
+            } catch (StatusRuntimeException e) {
+                if (Objects.equals(e.getStatus().getCode(), Status.Code.NOT_FOUND)) {
+                    logger.warn("workflow {} not found in target", params);
+                    failedTargetSignalAttempts = failedTargetSignalAttempts + 1;
+                    if(failedTargetSignalAttempts > 10) {
+                        signalable = false;
+                    }
                 }
             } catch (ApplicationFailure e) {
                 signalable = false;
             }
         }
-        // puT BACK IN THE THREAD SLEEP
         logger.info("workflowID existing '{}' with status '{}'", params, status);
         return last;
     }

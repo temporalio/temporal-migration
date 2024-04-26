@@ -27,7 +27,7 @@ public class MigratedWorkflowImpl implements MigrateableWorkflow {
                 MigrationSupport.class,
                 ActivityOptions.
                         newBuilder().
-                        setStartToCloseTimeout(Duration.ofSeconds(600)).
+                        setStartToCloseTimeout(Duration.ofMinutes(10)).
                         setHeartbeatTimeout(Duration.ofSeconds(10)).
                         build());
     }
