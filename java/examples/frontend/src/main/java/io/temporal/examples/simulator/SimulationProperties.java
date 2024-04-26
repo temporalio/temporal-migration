@@ -13,7 +13,7 @@ public class SimulationProperties {
 
     private String simulationTaskQueue;
     private String legacyTaskQueue;
-
+    private int signalTargetThresholdCount;
 
     public long getSignalFrequencyMillis() {
         return signalFrequencyMillis;
@@ -53,5 +53,13 @@ public class SimulationProperties {
 
     public void setLegacyTaskQueue(String legacyTaskQueue) {
         this.legacyTaskQueue = legacyTaskQueue;
+    }
+
+    public int getSignalTargetThresholdCount() {
+        return signalTargetThresholdCount;
+    }
+
+    public void setSignalTargetThresholdCount(int signalTargetThresholdCount) {
+        this.signalTargetThresholdCount = signalTargetThresholdCount;
     }
 }

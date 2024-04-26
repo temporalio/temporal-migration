@@ -4,12 +4,15 @@ public class SignalParams {
     private long signalFrequencyMillis;
     private String workflowId;
 
-    public SignalParams() {
+    public SignalParams(String workflowId, long signalFrequencyMillis, int signalTargetThresholdCount) {
+        this.signalFrequencyMillis = signalFrequencyMillis;
+        this.workflowId = workflowId;
+        this.signalTargetThresholdCount = signalTargetThresholdCount;
     }
 
-    public SignalParams(String workflowId, long signalFrequencyMillis) {
-        this.workflowId = workflowId;
-        this.signalFrequencyMillis = signalFrequencyMillis;
+    private int signalTargetThresholdCount;
+
+    public SignalParams() {
     }
 
     public long getSignalFrequencyMillis() {
@@ -26,5 +29,13 @@ public class SignalParams {
 
     public void setWorkflowId(String workflowId) {
         this.workflowId = workflowId;
+    }
+
+    public int getSignalTargetThresholdCount() {
+        return signalTargetThresholdCount;
+    }
+
+    public void setSignalTargetThresholdCount(int signalTargetThresholdCount) {
+        this.signalTargetThresholdCount = signalTargetThresholdCount;
     }
 }

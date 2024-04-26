@@ -75,6 +75,9 @@ public class SignalActivitiesImpl implements SignalActivities {
 
     @Override
     public LastValue signalUntilAndAfterMigrated(SignalParams params) {
+        if(params.getSignalTargetThresholdCount() == 0) {
+            params.setSignalTargetThresholdCount(50);
+        }
         boolean hasMigrated = false;
         boolean signalable = true;
         int failedLegacySignalAttempts = 0;
@@ -83,7 +86,7 @@ public class SignalActivitiesImpl implements SignalActivities {
         WorkflowExecutionStatus status = WorkflowExecutionStatus.WORKFLOW_EXECUTION_STATUS_RUNNING;
         LastValue last = new LastValue(params.getWorkflowId(), "UNDEFINED");
 
-        while (signalable) {
+        while (signalable && params.getSignalTargetThresholdCount() > -1) {
             String value = Simulator.now();
             Activity.getExecutionContext().heartbeat(new int[]{failedLegacySignalAttempts,failedTargetSignalAttempts});
             if (!hasMigrated) {
@@ -99,9 +102,11 @@ public class SignalActivitiesImpl implements SignalActivities {
                     }
                     continue;
                 } catch (WorkflowNotFoundException e) {
+                    failedLegacySignalAttempts = failedLegacySignalAttempts+ 1;
                     logger.warn("workflow {} not found...forwarding in target", params, e);
                 } catch (StatusRuntimeException e) {
                     if (Objects.equals(e.getStatus().getCode(),Status.Code.NOT_FOUND)) {
+                        failedLegacySignalAttempts = failedLegacySignalAttempts+ 1;
                         logger.debug("workflow {} not found...forwarding in target", params);
                         // swallow this error
                     }
@@ -114,6 +119,7 @@ public class SignalActivitiesImpl implements SignalActivities {
                 wf.setValue(value);
                 hasMigrated = true;
                 last = new LastValue(params.getWorkflowId(), value);
+                params.setSignalTargetThresholdCount(params.getSignalTargetThresholdCount() - 1);
                 try {
                     Thread.sleep(params.getSignalFrequencyMillis());
                 } catch (InterruptedException e) {

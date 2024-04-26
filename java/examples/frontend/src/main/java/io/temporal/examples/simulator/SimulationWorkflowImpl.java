@@ -36,12 +36,12 @@ public class SimulationWorkflowImpl implements SimulationWorkflow {
 
         if (params.isFailover()) {
             for (String id : executions) {
-                promises.add(Async.function(signalActivities::signalUntilAndAfterMigrated, new SignalParams(id, params.getSignalFrequencyMillis())).
+                promises.add(Async.function(signalActivities::signalUntilAndAfterMigrated, new SignalParams(id, params.getSignalFrequencyMillis(), params.getSignalTargetThresholdCount())).
                         thenApply(lastValue -> lastValues.put(lastValue.getWorkflowId(), lastValue.getValue())));
             }
         } else {
             for (String id : executions) {
-                promises.add(Async.function(signalActivities::signalUntilClosed, new SignalParams(id, params.getSignalFrequencyMillis())).
+                promises.add(Async.function(signalActivities::signalUntilClosed, new SignalParams(id, params.getSignalFrequencyMillis(), params.getSignalTargetThresholdCount())).
                         thenApply(lastValue -> lastValues.put(lastValue.getWorkflowId(), lastValue.getValue())));
             }
         }

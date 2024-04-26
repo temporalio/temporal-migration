@@ -28,9 +28,10 @@ spring:
   application:
     name: temporal-frontend
   simulation:
-    execution-count: 50
+    execution-count: 100
+    signal-frequency-millis: 200
+    signal-target-threshold-count: 3
     id-seed: mig
-    signal-frequency-millis: 500
     simulation-task-queue: simulation
     legacy-task-queue: default
   temporal:

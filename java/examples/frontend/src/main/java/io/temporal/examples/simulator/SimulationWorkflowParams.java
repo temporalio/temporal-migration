@@ -6,6 +6,8 @@ public class SimulationWorkflowParams {
 
     private String workflowType;
 
+    private int signalTargetThresholdCount;
+
 
     public boolean isFailover() {
         return failover;
@@ -29,5 +31,13 @@ public class SimulationWorkflowParams {
 
     public void setWorkflowType(String workflowType) {
         this.workflowType = workflowType;
+    }
+
+    public int getSignalTargetThresholdCount() {
+        return signalTargetThresholdCount;
+    }
+
+    public void setSignalTargetThresholdCount(int signalTargetThresholdCount) {
+        this.signalTargetThresholdCount = signalTargetThresholdCount;
     }
 }

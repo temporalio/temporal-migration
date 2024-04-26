@@ -90,6 +90,7 @@ public class   Application implements CommandLineRunner {
             params.setFailover(true);
             params.setWorkflowType(workflowTypeToMigrate.getSimpleName());
             params.setSignalFrequencyMillis(simulationProperties.getSignalFrequencyMillis());
+            params.setSignalTargetThresholdCount(simulationProperties.getSignalTargetThresholdCount());
 //            CompletableFuture<Void> execution = WorkflowClient.execute(simulationWorkflow::simulate, params);
             WorkflowExecution start = WorkflowClient.start(simulationWorkflow::simulate, params);
             logger.info("simulation started: {}" , start.getWorkflowId());
