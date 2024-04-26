@@ -16,6 +16,7 @@ spring:
       target: 127.0.0.1:7233
   migration:
     state-query-name: 'getMigrationState'
+    migration-signal-name: 'migrateIt'
     target:
       namespace: migration-demo.sdvdw
       connection:

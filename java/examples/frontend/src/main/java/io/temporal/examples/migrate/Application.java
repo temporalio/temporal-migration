@@ -55,7 +55,7 @@ public class Application implements CommandLineRunner {
                 startBatchOperation(StartBatchOperationRequest.newBuilder()
                         .setNamespace(clients.getLegacyClient().getOptions().getNamespace())
                         .setReason("migration")
-                        .setJobId(System.getProperty("APP_UUID")
+                        .setJobId(UUID.randomUUID().toString()
                         ).setVisibilityQuery(q)
                         .setSignalOperation(BatchOperationSignal.newBuilder().setSignal(migrationProperties.getMigrationSignalName()).build())
                         .build());

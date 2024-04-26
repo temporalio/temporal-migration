@@ -28,6 +28,7 @@ public class MigratedWorkflowImpl implements MigrateableWorkflow {
                 ActivityOptions.
                         newBuilder().
                         setStartToCloseTimeout(Duration.ofSeconds(10)).
+                        setHeartbeatTimeout(Duration.ofSeconds(10)).
                         build());
     }
 
@@ -41,7 +42,7 @@ public class MigratedWorkflowImpl implements MigrateableWorkflow {
         if(params.getExecutionState() == null || !params.getExecutionState().isMigrated()) {
             WorkflowInfo info = Workflow.getInfo();
             PullLegacyExecutionResponse pullLegacyExecutionResponse = this.acts.pullLegacyExecutionInfo(new PullLegacyExecutionRequest(
-                    info.getNamespace(),
+                    null,
                     info.getWorkflowType(),
                     info.getWorkflowId(),
                     2

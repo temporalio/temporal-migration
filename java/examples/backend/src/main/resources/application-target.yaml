@@ -20,6 +20,7 @@ spring:
         cert-chain-file: /Users/mnichols/certs/migration-demo.sdvdw.pem
   migration:
     state-query-name: 'getMigrationState'
+    migration-signal-name: 'migrateIt'
     target:
       namespace: migration-demo.sdvdw
       connection:

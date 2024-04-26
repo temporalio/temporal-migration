@@ -11,7 +11,7 @@ public class PullLegacyExecutionRequest {
     public PullLegacyExecutionRequest() {
     }
 
-    public PullLegacyExecutionRequest(String namespace, String workflowId, String workflowType, int pollingDurationSecs) {
+    public PullLegacyExecutionRequest(String namespace, String workflowType, String workflowId, int pollingDurationSecs) {
         this.namespace = namespace;
         this.workflowId = workflowId;
         this.workflowType = workflowType;

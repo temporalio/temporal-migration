@@ -1,6 +1,10 @@
 package io.temporal.examples.seed;
 
+import io.github.thibaultmeyer.cuid.CUID;
+import io.temporal.api.batch.v1.BatchOperationDeletion;
 import io.temporal.api.common.v1.WorkflowExecution;
+import io.temporal.api.workflowservice.v1.StartBatchOperationRequest;
+import io.temporal.api.workflowservice.v1.StartBatchOperationResponse;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import io.temporal.examples.backend.MigrateableWorkflow;
@@ -11,10 +15,10 @@ import io.temporal.examples.simulator.SimulationProperties;
 import io.temporal.examples.simulator.SimulationWorkflow;
 import io.temporal.examples.simulator.SimulationWorkflowParams;
 
+import io.temporal.serviceclient.WorkflowServiceStubs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -41,11 +45,22 @@ public class   Application implements CommandLineRunner {
     @Autowired
     SimulationProperties simulationProperties;
 
+    public StartBatchOperationResponse cleanExecutions(WorkflowClient client, String workflowType) {
+        String q = String.format("WorkflowType='%s'", workflowType);
+
+        WorkflowServiceStubs svc = client.getWorkflowServiceStubs();
+        return svc.blockingStub().startBatchOperation(StartBatchOperationRequest.newBuilder()
+                .setNamespace(client.getOptions().getNamespace()).setJobId(UUID.randomUUID().toString())
+                .setReason("clean").setVisibilityQuery(q).setDeletionOperation(
+                        BatchOperationDeletion.newBuilder().build()).build());
+    }
     @Override
     public void run(String... args) throws Exception {
-
-
         Class<MigrateableWorkflow> workflowTypeToMigrate = MigrateableWorkflow.class;
+
+        cleanExecutions(clients.getLegacyClient(), workflowTypeToMigrate.getSimpleName());
+        cleanExecutions(clients.getTargetClient(), workflowTypeToMigrate.getSimpleName());
+        cleanExecutions(clients.getLegacyClient(), SimulationWorkflow.class.getSimpleName());
 
         WorkflowClient legacy = clients.getLegacyClient();
         logger.info("idSeed = {}", simulationProperties.getIdSeed());
@@ -54,7 +69,7 @@ public class   Application implements CommandLineRunner {
         logger.info("workflowType = {}", String.format("%s", workflowTypeToMigrate.getSimpleName()));
         try {
             for (int i = 0; i < simulationProperties.getExecutionCount(); i++) {
-                String wid = String.format("%s-%d", simulationProperties.getIdSeed(), i);
+                String wid = String.format("%s-%d-%s", simulationProperties.getIdSeed(), i, CUID.randomCUID2(4));
                 WorkflowOptions workflowOptions = WorkflowOptions.newBuilder().
                         setWorkflowId(wid).
                         setTaskQueue(simulationProperties.getLegacyTaskQueue()).build();

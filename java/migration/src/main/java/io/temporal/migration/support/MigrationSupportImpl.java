@@ -52,7 +52,7 @@ public class MigrationSupportImpl implements MigrationSupport {
         if(cmd.getPollingDurationSecs() == 0) {
             cmd.setPollingDurationSecs(2);
         }
-        if (Objects.equals(cmd.getNamespace(), "")) {
+        if (cmd.getNamespace() == null || Objects.equals(cmd.getNamespace(), "")) {
             cmd.setNamespace(this.legacyWorkflowClient.getOptions().getNamespace());
         }
         if (Objects.equals(cmd.getWorkflowId(), "")) {
@@ -80,6 +80,7 @@ public class MigrationSupportImpl implements MigrationSupport {
                 }
                 sleep(cmd.getPollingDurationSecs());
                 resp.setElapsedTime(resp.getElapsedTime() + cmd.getPollingDurationSecs());
+                Activity.getExecutionContext().heartbeat(resp.getElapsedTime());
             } catch (StatusRuntimeException e) {
                 Status.Code rstat = e.getStatus().getCode();
                 if (Objects.requireNonNull(rstat) == Status.Code.NOT_FOUND) {
