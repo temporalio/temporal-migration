@@ -30,12 +30,11 @@ public class MigrationSupportImpl implements MigrationSupport {
     private WorkflowClient targetWorkflowClient;
     private  String migrationStateQueryName;
 
-    public MigrationSupportImpl(@Qualifier("legacyTemporalWorkflowClient") WorkflowClient legacyWorkflowClient,
-                                @Qualifier("temporalWorkflowClient") WorkflowClient targetWorkflowClient,
-                                @Value("${spring.migration.state-query-name}") String migrationStateQueryName) {
-        this.legacyWorkflowClient = legacyWorkflowClient;
-        this.targetWorkflowClient = targetWorkflowClient;
-        this.migrationStateQueryName = migrationStateQueryName;
+    public MigrationSupportImpl(Clients clients, MigrationProperties migrationProperties) {
+
+        this.legacyWorkflowClient = clients.getLegacyClient();
+        this.targetWorkflowClient = clients.getTargetClient();
+        this.migrationStateQueryName = migrationProperties.getStateQueryName();
     }
 
     private void sleep(int seconds) {

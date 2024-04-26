@@ -22,7 +22,7 @@ public class TemporalOptionsConfig {
     @Autowired
     private MigrationWorkerInterceptor migrationWorkerInterceptor;
 
-    @Value("${application.name}")
+    @Value("${spring.application.name}")
     private String applicationName;
 
     @Bean

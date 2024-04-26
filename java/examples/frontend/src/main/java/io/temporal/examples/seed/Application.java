@@ -7,9 +7,10 @@ import io.temporal.examples.backend.MigrateableWorkflow;
 import io.temporal.examples.backend.MigrateableWorkflowParams;
 import io.temporal.examples.common.Clients;
 import io.temporal.examples.common.CommonConfig;
+import io.temporal.examples.simulator.SimulationProperties;
 import io.temporal.examples.simulator.SimulationWorkflow;
 import io.temporal.examples.simulator.SimulationWorkflowParams;
-import io.temporal.spring.boot.autoconfigure.ServiceStubsAutoConfiguration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +22,9 @@ import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
 
-@SpringBootApplication(exclude = ServiceStubsAutoConfiguration.class)
-@Import(CommonConfig.class)
-public class Application implements CommandLineRunner {
+@SpringBootApplication()
+@Import({CommonConfig.class, SimulationProperties.class})
+public class   Application implements CommandLineRunner {
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
     public static void main(String[] args) {
@@ -35,39 +36,28 @@ public class Application implements CommandLineRunner {
     }
 
     @Autowired
-    Clients clients;
+    private Clients clients;
 
-    @Value("${app.id-seed}")
-    String idSeed;
-
-    @Value("${app.execution-count}")
-    int executionCount;
-
-    @Value("${app.signal-frequency-millis}")
-    long signalFrequencyMillis;
-
-    @Value("${app.temporal.legacy.task-queue}")
-    String legacyTaskQueue;
-
-    @Value("${app.temporal.simulator.task-queue}")
-    String simulationTaskQueue;
+    @Autowired
+    SimulationProperties simulationProperties;
 
     @Override
     public void run(String... args) throws Exception {
 
+
         Class<MigrateableWorkflow> workflowTypeToMigrate = MigrateableWorkflow.class;
 
         WorkflowClient legacy = clients.getLegacyClient();
-        logger.info("idSeed = {}", idSeed);
-        logger.info("legacyTaskQueue = {}", legacyTaskQueue);
-        logger.info("signalFrequencyMillis = {}", signalFrequencyMillis);
+        logger.info("idSeed = {}", simulationProperties.getIdSeed());
+        logger.info("legacyTaskQueue = {}", simulationProperties.getLegacyTaskQueue());
+        logger.info("signalFrequencyMillis = {}", simulationProperties.getSignalFrequencyMillis());
         logger.info("workflowType = {}", String.format("%s", workflowTypeToMigrate.getSimpleName()));
         try {
-            for (int i = 0; i < executionCount; i++) {
-                String wid = String.format("%s-%d", idSeed, i);
+            for (int i = 0; i < simulationProperties.getExecutionCount(); i++) {
+                String wid = String.format("%s-%d", simulationProperties.getIdSeed(), i);
                 WorkflowOptions workflowOptions = WorkflowOptions.newBuilder().
                         setWorkflowId(wid).
-                        setTaskQueue(legacyTaskQueue).build();
+                        setTaskQueue(simulationProperties.getLegacyTaskQueue()).build();
                 MigrateableWorkflow workflow = legacy.newWorkflowStub(workflowTypeToMigrate, workflowOptions);
                 MigrateableWorkflowParams params = new MigrateableWorkflowParams(String.format("initial-%d", i), 300);
                 WorkflowClient.start(workflow::execute, params);
@@ -79,12 +69,12 @@ public class Application implements CommandLineRunner {
 
         SimulationWorkflow simulationWorkflow = legacy.
                 newWorkflowStub(SimulationWorkflow.class, WorkflowOptions.newBuilder().
-                        setWorkflowId(String.format("%s-simulator", idSeed)).setTaskQueue(simulationTaskQueue).build());
+                        setWorkflowId(String.format("%s-simulator", simulationProperties.getIdSeed())).setTaskQueue(simulationProperties.getSimulationTaskQueue()).build());
         try {
             SimulationWorkflowParams params = new SimulationWorkflowParams();
             params.setFailover(true);
             params.setWorkflowType(workflowTypeToMigrate.getSimpleName());
-            params.setSignalFrequencyMillis(signalFrequencyMillis);
+            params.setSignalFrequencyMillis(simulationProperties.getSignalFrequencyMillis());
 //            CompletableFuture<Void> execution = WorkflowClient.execute(simulationWorkflow::simulate, params);
             WorkflowExecution start = WorkflowClient.start(simulationWorkflow::simulate, params);
             logger.info("simulation started: {}" , start.getWorkflowId());

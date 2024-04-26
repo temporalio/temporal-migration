@@ -1,4 +1,4 @@
-package io.temporal.examples.common;
+package io.temporal.migration.support;
 
 import io.temporal.client.WorkflowClient;
 import org.springframework.beans.factory.annotation.Qualifier;

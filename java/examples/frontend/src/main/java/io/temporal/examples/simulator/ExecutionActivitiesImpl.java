@@ -4,20 +4,19 @@ import io.temporal.api.workflow.v1.WorkflowExecutionInfo;
 import io.temporal.api.workflowservice.v1.ListWorkflowExecutionsRequest;
 import io.temporal.api.workflowservice.v1.ListWorkflowExecutionsResponse;
 import io.temporal.client.WorkflowClient;
+import io.temporal.examples.common.Clients;
 import io.temporal.serviceclient.WorkflowServiceStubs;
-import io.temporal.spring.boot.ActivityImpl;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@ActivityImpl(taskQueues = SimulationWorkflowImpl.taskQueue)
-@Component
+@Component("execution-activities")
 public class ExecutionActivitiesImpl implements ExecutionActivities {
     private final WorkflowClient legacyNamespaceClient;
 
-    public ExecutionActivitiesImpl(WorkflowClient legacyNamespaceClient) {
-        this.legacyNamespaceClient = legacyNamespaceClient;
+    public ExecutionActivitiesImpl(Clients clients) {
+        this.legacyNamespaceClient = clients.getLegacyClient();
     }
 
     @Override

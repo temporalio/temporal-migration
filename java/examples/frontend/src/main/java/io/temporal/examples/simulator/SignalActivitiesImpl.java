@@ -12,14 +12,11 @@ import io.temporal.examples.backend.MigrateableWorkflow;
 import io.temporal.examples.common.Clients;
 import io.temporal.failure.ApplicationFailure;
 import io.temporal.serviceclient.WorkflowServiceStubs;
-import io.temporal.spring.boot.ActivityImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-@ActivityImpl(taskQueues = SimulationWorkflowImpl.taskQueue)
-@Component
+@Component("signal-activities")
 public class SignalActivitiesImpl implements SignalActivities {
     private final WorkflowClient legacyNamespaceClient;
     private final WorkflowClient targetNamespaceClient;

@@ -1,7 +1,6 @@
 package io.temporal.examples.simulator;
 
 import io.temporal.examples.common.CommonConfig;
-import io.temporal.spring.boot.autoconfigure.ServiceStubsAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
@@ -19,4 +18,6 @@ public class Application {
         System.setProperty("APP_UUID", UUID.randomUUID().toString());
         SpringApplication.run(Application.class, args);
     }
+
+
 }

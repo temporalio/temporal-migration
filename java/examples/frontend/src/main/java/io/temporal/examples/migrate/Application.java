@@ -2,36 +2,27 @@ package io.temporal.examples.migrate;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import io.temporal.api.batch.v1.BatchOperationSignal;
-import io.temporal.api.common.v1.WorkflowExecution;
 import io.temporal.api.workflowservice.v1.StartBatchOperationRequest;
 import io.temporal.api.workflowservice.v1.StartBatchOperationResponse;
-import io.temporal.client.WorkflowClient;
-import io.temporal.client.WorkflowOptions;
 import io.temporal.examples.backend.MigrateableWorkflow;
-import io.temporal.examples.backend.MigrateableWorkflowParams;
 import io.temporal.examples.common.Clients;
 import io.temporal.examples.common.CommonConfig;
-import io.temporal.examples.simulator.SimulationWorkflow;
-import io.temporal.examples.simulator.SimulationWorkflowParams;
+import io.temporal.examples.common.MigrationProperties;
+import io.temporal.examples.simulator.SimulationProperties;
 import io.temporal.serviceclient.WorkflowServiceStubs;
-import io.temporal.serviceclient.WorkflowServiceStubsOptions;
-import io.temporal.spring.boot.autoconfigure.ServiceStubsAutoConfiguration;
-import io.temporal.workflow.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 
-import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-@SpringBootApplication(exclude = ServiceStubsAutoConfiguration.class)
-@Import(CommonConfig.class)
+@SpringBootApplication
+@Import({CommonConfig.class, SimulationProperties.class})
 public class Application implements CommandLineRunner {
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
@@ -46,23 +37,15 @@ public class Application implements CommandLineRunner {
     @Autowired
     Clients clients;
 
-    @Value("${app.id-seed}")
-    String idSeed;
+    @Autowired
+    SimulationProperties simulationProperties;
 
-    @Value("${app.execution-count}")
-    int executionCount;
-
-    @Value("${app.signal-frequency-millis}")
-    long signalFrequencyMillis;
-
-    @Value("${app.temporal.legacy.task-queue}")
-    String legacyTaskQueue;
-
-    @Value("${app.temporal.simulator.task-queue}")
-    String simulationTaskQueue;
+    @Autowired
+    MigrationProperties migrationProperties;
 
     @Override
     public void run(String... args) throws Exception {
+
 
         Class<MigrateableWorkflow> migrateableWorkflowType = MigrateableWorkflow.class;
         String q = String.format("WorkflowType='%s' AND ExecutionStatus='Running'", migrateableWorkflowType.getSimpleName());
@@ -74,7 +57,7 @@ public class Application implements CommandLineRunner {
                         .setReason("migration")
                         .setJobId(System.getProperty("APP_UUID")
                         ).setVisibilityQuery(q)
-                        .setSignalOperation(BatchOperationSignal.newBuilder().setSignal("migrateIt").build())
+                        .setSignalOperation(BatchOperationSignal.newBuilder().setSignal(migrationProperties.getMigrationSignalName()).build())
                         .build());
 
         logger.info("started migrateIt batch signal operation for {}", q);
