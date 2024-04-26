@@ -8,6 +8,7 @@ import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionRequest;
 import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionResponse;
 import io.temporal.api.workflowservice.v1.WorkflowServiceGrpc;
 import io.temporal.client.WorkflowClient;
+import io.temporal.client.WorkflowNotFoundException;
 import io.temporal.client.WorkflowOptions;
 import io.temporal.client.WorkflowStub;
 import io.temporal.failure.ApplicationFailure;
@@ -84,10 +85,11 @@ public class MigrationSupportImpl implements MigrationSupport {
                 sleep(cmd.getPollingDurationSecs());
                 resp.setElapsedTime(resp.getElapsedTime() + cmd.getPollingDurationSecs());
 
+            } catch (WorkflowNotFoundException e) {
+                throw ApplicationFailure.newNonRetryableFailure("workflow execution not found", "not found", e.getMessage());
             } catch (StatusRuntimeException e) {
-                Status.Code rstat = e.getStatus().getCode();
-                if (Objects.equals(rstat,Status.Code.NOT_FOUND)) {
-                    throw ApplicationFailure.newNonRetryableFailure("workflow execution not found", "not found");
+                if (Objects.equals(e.getStatus().getCode(),Status.Code.NOT_FOUND)) {
+                    throw ApplicationFailure.newNonRetryableFailure("workflow execution not found", "not found", e.getMessage());
                 }
             }
         }
@@ -108,23 +110,30 @@ public class MigrationSupportImpl implements MigrationSupport {
         PushTargetExecutionResponse resp = new PushTargetExecutionResponse();
         try {
             DescribeWorkflowExecutionResponse ignore = stub.describeWorkflowExecution(req);
+        } catch(WorkflowNotFoundException e) {
+            logger.info("workflow {} not found.starting in target", cmd.getWorkflowId());
+            return resumeInTarget(cmd, resp);
         } catch(StatusRuntimeException e) {
             if(Objects.equals(e.getStatus().getCode(),Status.Code.NOT_FOUND)) {
                 logger.info("workflow {} not found.starting in target", cmd.getWorkflowId());
-                WorkflowStub workflow = this.targetWorkflowClient.newUntypedWorkflowStub(cmd.getWorkflowType(),
-                        WorkflowOptions.newBuilder().
-                                setWorkflowId(cmd.getWorkflowId()).
-                                setTaskQueue(cmd.getTaskQueue()).
-                                build());
-                workflow.start(cmd.getArguments());
-                resp.setStarted(true);
-                return resp;
+                return resumeInTarget(cmd, resp);
             }
             throw e;
         } catch(Exception e) {
             logger.error("failed to resumeInTarget", e);
             throw e;
         }
+        return resp;
+    }
+
+    private PushTargetExecutionResponse resumeInTarget(PushTargetExecutionRequest cmd, PushTargetExecutionResponse resp) {
+        WorkflowStub workflow = this.targetWorkflowClient.newUntypedWorkflowStub(cmd.getWorkflowType(),
+                WorkflowOptions.newBuilder().
+                        setWorkflowId(cmd.getWorkflowId()).
+                        setTaskQueue(cmd.getTaskQueue()).
+                        build());
+        workflow.start(cmd.getArguments());
+        resp.setStarted(true);
         return resp;
     }
 }
