@@ -1,20 +1,28 @@
 package io.temporal.examples.backend;
 
+import java.util.List;
+
 public class MigrateableWorkflowResult {
-    private String value;
+    private MigrateableWorkflowParams params;
+
+    public List<String> getReceivedValues() {
+        return this.params.getReceivedValues();
+    }
 
     public MigrateableWorkflowResult() {
+        this.params = new MigrateableWorkflowParams();
     }
 
-    public MigrateableWorkflowResult(String value) {
-        this.value = value;
+    public void appendValue(String... value) {
+        this.params.appendValue(value);
     }
 
-    public String getValue() {
-        return value;
+    public MigrateableWorkflowParams getParams() {
+        return params;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setParams(MigrateableWorkflowParams params) {
+        this.params = params;
     }
+
 }

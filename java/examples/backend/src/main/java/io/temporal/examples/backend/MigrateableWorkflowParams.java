@@ -1,28 +1,27 @@
 package io.temporal.examples.backend;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MigrateableWorkflowParams {
-    private String value;
+    private List<String> receivedValues = new ArrayList<>();
 
     private ExecutionState executionState;
-
-    public MigrateableWorkflowParams(String value, int keepAliveDurationSecs) {
-        this.value = value;
-        this.keepAliveDurationSecs = keepAliveDurationSecs;
-    }
 
     private int keepAliveDurationSecs;
 
     public MigrateableWorkflowParams() {
+        this.executionState = new ExecutionState(false);
     }
 
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
+    public void appendValue(String... value) {
+        for (String s : value) {
+            // poor man's fifo fixed size queue
+            if (this.receivedValues.size() > 100) {
+                this.receivedValues.remove(0);
+            }
+            this.receivedValues.add(s);
+        }
     }
 
     public int getKeepAliveDurationSecs() {
@@ -42,16 +41,11 @@ public class MigrateableWorkflowParams {
     }
 
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        MigrateableWorkflowParams that = (MigrateableWorkflowParams) o;
-        return keepAliveDurationSecs == that.keepAliveDurationSecs && Objects.equals(value, that.value) && Objects.equals(executionState, that.executionState);
+    public List<String> getReceivedValues() {
+        return receivedValues;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(value, executionState, keepAliveDurationSecs);
+    public void setReceivedValues(List<String> receivedValues) {
+        this.receivedValues = receivedValues;
     }
 }

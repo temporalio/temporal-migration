@@ -1,39 +1,35 @@
 package io.temporal.examples.backend;
 
-import io.temporal.spring.boot.WorkflowImpl;
 import io.temporal.workflow.Workflow;
 
 import java.time.Duration;
 
-@WorkflowImpl(taskQueues = MigrateableWorkflowImpl.taskQueue)
 public class MigrateableWorkflowImpl implements MigrateableWorkflow {
-    public static final String taskQueue = "default";
-    private MigrateableWorkflowParams params;
+    private final MigrateableWorkflowResult result;
 
     public MigrateableWorkflowImpl() {
-        this.params = new MigrateableWorkflowParams();
-        this.params.setValue("EMPTY");
-        this.params.setExecutionState(new ExecutionState(false));
+        this.result = new MigrateableWorkflowResult();
     }
 
     @Override
     public MigrateableWorkflowResult execute(MigrateableWorkflowParams params) {
-        MigrateableWorkflowResult result = new MigrateableWorkflowResult();
-        this.params.setKeepAliveDurationSecs(params.getKeepAliveDurationSecs());
-        this.params.setValue(params.getValue());
-        this.params.setExecutionState(params.getExecutionState());
-        result.setValue(params.getValue());
+        this.result.setParams(params);
         Workflow.sleep(Duration.ofSeconds(params.getKeepAliveDurationSecs()));
         return result;
     }
 
     @Override
     public MigrateableWorkflowParams getMigrationState() {
-        return this.params;
+        return this.result.getParams();
+    }
+
+    @Override
+    public MigrateableWorkflowResult getCurrentResult() {
+        return this.result;
     }
 
     @Override
     public void setValue(String value) {
-        this.params.setValue(value);
+        this.result.appendValue(value);
     }
 }

@@ -9,4 +9,6 @@ import java.util.List;
 public interface ExecutionActivities {
     @ActivityMethod
     List<String> getWorkflowIDs(String workflowType);
+    @ActivityMethod
+    VerificationResponse verify(String workflowId, SignalDetailsResponse signalDetails);
 }

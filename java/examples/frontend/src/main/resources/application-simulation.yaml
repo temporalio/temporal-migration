@@ -1,26 +1,5 @@
 server:
   port: 3030
-app:
-  execution-count: 1
-  id-seed: mig
-  signal-frequency-millis: 1000
-  temporal:
-    legacy:
-      task-queue: default
-      connection:
-        target: 127.0.0.1:7233
-        target.namespace: default
-    target:
-      connection:
-        target: migration-demo.sdvdw.tmprl.cloud:7233
-        mtls:
-          key-file: /Users/mnichols/certs/migration-demo.sdvdw.key
-          cert-chain-file: /Users/mnichols/certs/migration-demo.sdvdw.pem
-    simulator:
-      task-queue: simulation
-      connection:
-        target: 127.0.0.1:7233
-        target.namespace: default
 
 spring:
   main:
@@ -41,6 +20,7 @@ spring:
 
   migration:
     state-query-name: 'getMigrationState'
+    result-query-name: 'getCurrentResult'
     migration-signal-name: 'migrateIt'
     target:
       namespace: migration-demo.sdvdw

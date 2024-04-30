@@ -74,11 +74,12 @@ public class   Application implements CommandLineRunner {
                         setWorkflowId(wid).
                         setTaskQueue(simulationProperties.getLegacyTaskQueue()).build();
                 MigrateableWorkflow workflow = legacy.newWorkflowStub(workflowTypeToMigrate, workflowOptions);
-                MigrateableWorkflowParams params = new MigrateableWorkflowParams(String.format("initial-%d", i), 300);
+                MigrateableWorkflowParams params = new MigrateableWorkflowParams();
+                params.setKeepAliveDurationSecs(300);
                 WorkflowClient.start(workflow::execute, params);
             }
         } catch( Exception e) {
-            logger.error("an error was encountered trying to start workflows...aborting: " + e);
+            logger.error("an error was encountered trying to start workflows...aborting: ", e);
             System.exit(1);
         }
 

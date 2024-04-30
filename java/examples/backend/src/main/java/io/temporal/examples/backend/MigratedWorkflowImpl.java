@@ -6,22 +6,18 @@ import io.temporal.failure.ApplicationFailure;
 import io.temporal.migration.support.MigrationSupport;
 import io.temporal.migration.support.PullLegacyExecutionRequest;
 import io.temporal.migration.support.PullLegacyExecutionResponse;
-import io.temporal.spring.boot.WorkflowImpl;
 import io.temporal.workflow.Workflow;
 import io.temporal.workflow.WorkflowInfo;
 
 import java.time.Duration;
 
-@WorkflowImpl(taskQueues = MigratedWorkflowImpl.taskQueue)
 public class MigratedWorkflowImpl implements MigrateableWorkflow {
-    public static final String taskQueue = "default";
     private final MigrationSupport acts;
-    private MigrateableWorkflowParams params;
+
+    private final MigrateableWorkflowResult result ;
 
     public MigratedWorkflowImpl() {
-        this.params = new MigrateableWorkflowParams();
-        this.params.setValue("EMPTY");
-        this.params.setExecutionState(new ExecutionState(false));
+        this.result = new MigrateableWorkflowResult();
 
         this.acts = Workflow.newActivityStub(
                 MigrationSupport.class,
@@ -34,11 +30,10 @@ public class MigratedWorkflowImpl implements MigrateableWorkflow {
 
     @Override
     public MigrateableWorkflowResult execute(MigrateableWorkflowParams params) {
-        this.params = params;
-        MigrateableWorkflowResult result = new MigrateableWorkflowResult();
-        result.setValue(params.getValue());
+        this.result.setParams(params);
 
         // here we poll right away to get legacy execution state
+        // but note that signals could come in while the activity is pulling legacy state
         if(params.getExecutionState() == null || !params.getExecutionState().isMigrated()) {
             WorkflowInfo info = Workflow.getInfo();
             PullLegacyExecutionResponse pullLegacyExecutionResponse = this.acts.pullLegacyExecutionInfo(new PullLegacyExecutionRequest(
@@ -53,24 +48,37 @@ public class MigratedWorkflowImpl implements MigrateableWorkflow {
             }
             ObjectMapper mapper = new ObjectMapper();
             MigrateableWorkflowParams migratedParams = mapper.convertValue(pullLegacyExecutionResponse.getMigrationState(), MigrateableWorkflowParams.class);
-            MigrateableWorkflow stub = Workflow.newContinueAsNewStub(MigrateableWorkflow.class);
+            // executionState could be as complicated as we need.
+            // here we are just flipping a 'isMigrated' flag to skip the poll after CAN
             if(migratedParams.getExecutionState() == null) {
                 migratedParams.setExecutionState(new ExecutionState(true));
+            } else {
+                migratedParams.getExecutionState().setMigrated(true);
             }
+            // store the migration state here
+            // this is merging state changes we have received while pulling from legacy in prep for our CAN
+            migratedParams.appendValue(this.result.getReceivedValues().toArray(new String[0]));
+            MigrateableWorkflow stub = Workflow.newContinueAsNewStub(MigrateableWorkflow.class);
             return stub.execute(migratedParams);
         }
 
         Workflow.sleep(Duration.ofSeconds(params.getKeepAliveDurationSecs()));
+
         return result;
     }
 
     @Override
     public MigrateableWorkflowParams getMigrationState() {
-        return this.params;
+        return this.result.getParams();
+    }
+
+    @Override
+    public MigrateableWorkflowResult getCurrentResult() {
+        return this.result;
     }
 
     @Override
     public void setValue(String value) {
-        this.params.setValue(value);
+        this.result.appendValue(value);
     }
 }

@@ -7,8 +7,6 @@ import io.temporal.workflow.WorkflowMethod;
 @WorkflowInterface
 public interface SimulationWorkflow {
     @WorkflowMethod
-    void simulate(SimulationWorkflowParams params);
+    SimulationResult simulate(SimulationWorkflowParams params);
 
-    @QueryMethod
-    String getLastValue(String workflowId);
 }

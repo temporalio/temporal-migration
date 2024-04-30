@@ -1,27 +1,22 @@
 package io.temporal.examples.simulator;
 
 import io.temporal.activity.ActivityOptions;
-import io.temporal.spring.boot.WorkflowImpl;
 import io.temporal.workflow.Async;
 import io.temporal.workflow.Promise;
 import io.temporal.workflow.Workflow;
 import org.slf4j.Logger;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-@WorkflowImpl(taskQueues = SimulationWorkflowImpl.taskQueue)
 public class SimulationWorkflowImpl implements SimulationWorkflow {
 
     public static final String taskQueue = "simulation";
     private static final Logger logger = Workflow.getLogger(SimulationWorkflowImpl.class);
 
-    private Map<String, String> lastValues;
+    private SimulationResult result = new SimulationResult();
     private final ExecutionActivities executionActivities = Workflow.newActivityStub(
-            ExecutionActivities.class, ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(10)).build());
+            ExecutionActivities.class, ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(60)).build());
 
     private final SignalActivities signalActivities = Workflow.newActivityStub(
             SignalActivities.class, ActivityOptions.newBuilder().
@@ -29,29 +24,46 @@ public class SimulationWorkflowImpl implements SimulationWorkflow {
                     setStartToCloseTimeout(Duration.ofHours(1)).build());
 
     @Override
-    public void simulate(SimulationWorkflowParams params) {
-        this.lastValues = new HashMap<>();
+    public SimulationResult simulate(SimulationWorkflowParams params) {
+
         List<String> executions = executionActivities.getWorkflowIDs(params.getWorkflowType());
-        List<Promise<String>> promises = new ArrayList<>();
+        Map<String, SignalDetailsResponse> signalDetails = new HashMap<>();
+        result = new SimulationResult(executions);
+        List<Promise<String>> signalPromises = new ArrayList<>();
+        List<Promise<String>> verificationPromises = new ArrayList<>();
 
         if (params.isFailover()) {
             for (String id : executions) {
-                promises.add(Async.function(signalActivities::signalUntilAndAfterMigrated, new SignalParams(id, params.getSignalFrequencyMillis(), params.getSignalTargetThresholdCount())).
-                        thenApply(lastValue -> lastValues.put(lastValue.getWorkflowId(), lastValue.getValue())));
+                signalPromises.add(Async.function(signalActivities::signalUntilAndAfterMigrated, new SignalParams(id, params.getSignalFrequencyMillis(), params.getSignalTargetThresholdCount())).
+                        thenApply(lastValue -> { signalDetails.put(lastValue.getWorkflowId(), lastValue); return lastValue.getWorkflowId();}));
             }
         } else {
             for (String id : executions) {
-                promises.add(Async.function(signalActivities::signalUntilClosed, new SignalParams(id, params.getSignalFrequencyMillis(), params.getSignalTargetThresholdCount())).
-                        thenApply(lastValue -> lastValues.put(lastValue.getWorkflowId(), lastValue.getValue())));
+                signalPromises.add(Async.function(signalActivities::signalUntilClosed,
+                                new SignalParams(id, params.getSignalFrequencyMillis(), params.getSignalTargetThresholdCount())).
+                        thenApply(lastValue -> { signalDetails.put(lastValue.getWorkflowId(), lastValue); return lastValue.getWorkflowId();}));
             }
         }
 
-        Promise.allOf(promises).get();
+        Promise.allOf(signalPromises).get();
+        // wait for all the things to get done in target
+        Workflow.sleep(Duration.ofSeconds(5));
+
+        // we stopped all our signaling now lets verify the inputs of each execution in the target
+        for(String wid: signalDetails.keySet()) {
+            verificationPromises.add(Async.function(executionActivities::verify, wid, signalDetails.get(wid)).thenApply(res ->
+                    result.setVerificationResponse(wid, res)));
+        }
+        Promise.allOf(verificationPromises).get();
+
+        for(Map.Entry<String, VerificationResponse> entry: result.getVerifications().entrySet()) {
+            if(!Objects.equals(entry.getValue().getSignalsSentSize(), entry.getValue().getTargetSignalsReceivedSize())) {
+                result.getBadWorkflowIds().add(entry.getValue().getSignalDetails().getWorkflowId());
+            }
+        }
+
         logger.info("completed signals sending");
+        return result;
     }
 
-    @Override
-    public String getLastValue(String workflowId) {
-        return this.lastValues.get(workflowId);
-    }
 }

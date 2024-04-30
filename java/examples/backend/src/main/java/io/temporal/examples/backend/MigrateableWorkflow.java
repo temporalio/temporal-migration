@@ -13,6 +13,9 @@ public interface MigrateableWorkflow {
     @QueryMethod
     MigrateableWorkflowParams getMigrationState();
 
+    @QueryMethod
+    MigrateableWorkflowResult getCurrentResult();
+
     @SignalMethod
     void setValue(String value);
 }
