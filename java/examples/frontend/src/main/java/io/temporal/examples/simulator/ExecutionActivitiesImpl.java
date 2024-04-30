@@ -57,7 +57,7 @@ public class ExecutionActivitiesImpl implements ExecutionActivities {
         MigrateableWorkflowResult legacyResult = legacyStub.query(this.resultQueryName, MigrateableWorkflowResult.class);
         response.setTargetExecutionResult(legacyResult);
 
-        // first find out how the workflow was started
+        //  find out how the workflow was started..informational use only
         WorkflowExecutionHistory history = this.targetWorkflowClient.fetchHistory(workflowId);
         Payloads payloads =
                 history.getHistory().getEvents(0).getWorkflowExecutionStartedEventAttributes().getInput();
@@ -85,24 +85,6 @@ public class ExecutionActivitiesImpl implements ExecutionActivities {
         // now compare each element position in the list
 //        ArrayList<String> signalDetailsList = new ArrayList<>(signalDetailsSet);
 //        ArrayList<String> targetSignalsList = new ArrayList<>(targetSignalsSet);
-
-//        int maxSignalCheckCount = 20;
-//        int upperBoundIndex = targetSignalsList.size() - 1;
-//        int lowerBoundIndex = Math.min(signalDetailsList.size() - maxSignalCheckCount - 1, signalDetailsList.size() - 1 );
-//
-//        for(int i = upperBoundIndex; i > lowerBoundIndex; i--) {
-//            String actual = targetSignalsList.get(i);
-//            String expect = signalDetailsList.get(i);
-//            if(!Objects.equals(actual, expect)) {
-//                response.getDroppedSignals().add(expect);
-//            }
-//        }
-//        for (int i = 0; i < signalDetailsList.size(); i++) {
-//            if(!Objects.equals(signalDetailsList.get(i), targetSignalsList.get(i))) {
-//                response.setHasPotentiallyDroppedSignals(true);
-//                return response;
-//            }
-//        }
 
         return response;
     }

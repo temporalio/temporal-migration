@@ -1,7 +1,5 @@
 package io.temporal.examples.simulator;
 
-import com.google.common.cache.AbstractCache;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,15 +7,15 @@ import java.util.Map;
 
 public class SimulationResult {
     private Map<String,VerificationResponse> verifications;
-    private List<String> badWorkflowIds;
+    private List<String> workflowIdsWithDeltas;
 
     public SimulationResult() {
         this.verifications = new HashMap<>();
-        this.badWorkflowIds = new ArrayList<>();
+        this.workflowIdsWithDeltas = new ArrayList<>();
     }
     public SimulationResult(List<String> workflowIds) {
         this.verifications = new HashMap<>();
-        this.badWorkflowIds = new ArrayList<>();
+        this.workflowIdsWithDeltas = new ArrayList<>();
         for (int i = 0; i < workflowIds.size(); i++) {
             this.verifications.put(workflowIds.get(i), null);
         }
@@ -32,11 +30,11 @@ public class SimulationResult {
         return this.verifications;
     }
 
-    public List<String> getBadWorkflowIds() {
-        return badWorkflowIds;
+    public List<String> getWorkflowIdsWithDeltas() {
+        return workflowIdsWithDeltas;
     }
 
-    public void setBadWorkflowIds(List<String> badWorkflowIds) {
-        this.badWorkflowIds = badWorkflowIds;
+    public void setWorkflowIdsWithDeltas(List<String> workflowIdsWithDeltas) {
+        this.workflowIdsWithDeltas = workflowIdsWithDeltas;
     }
 }

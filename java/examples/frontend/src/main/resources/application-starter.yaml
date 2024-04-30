@@ -8,7 +8,7 @@ spring:
   application:
     name: temporal-frontend
   simulation:
-    execution-count: 20
+    execution-count: 1
     signal-frequency-millis: 200
     signal-target-threshold-count: 3
     id-seed: mig

@@ -47,7 +47,9 @@ public class SimulationWorkflowImpl implements SimulationWorkflow {
 
         Promise.allOf(signalPromises).get();
         // wait for all the things to get done in target
-        Workflow.sleep(Duration.ofSeconds(5));
+        // poor man's calculus..give 3 seconds for every 4 executions to finish up
+        long waitFor = (long)Math.min(3L, Math.abs(Math.floor((double) executions.size() / 4) * 3L ));
+        Workflow.sleep( Duration.ofSeconds(waitFor));
 
         // we stopped all our signaling now lets verify the inputs of each execution in the target
         for(String wid: signalDetails.keySet()) {
@@ -58,7 +60,7 @@ public class SimulationWorkflowImpl implements SimulationWorkflow {
 
         for(Map.Entry<String, VerificationResponse> entry: result.getVerifications().entrySet()) {
             if(!Objects.equals(entry.getValue().getSignalsSentSize(), entry.getValue().getTargetSignalsReceivedSize())) {
-                result.getBadWorkflowIds().add(entry.getValue().getSignalDetails().getWorkflowId());
+                result.getWorkflowIdsWithDeltas().add(entry.getValue().getSignalDetails().getWorkflowId());
             }
         }
 
