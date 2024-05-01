@@ -1,0 +1,26 @@
+server:
+  port: 3030
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: temporal-migration-legacy
+  temporal:
+    workers:
+      - task-queue: default
+        workflow-classes:
+          - io.temporal.examples.backend.MigrateableWorkflowImpl
+        activity-beans:
+          - migration-support
+    connection:
+      target: 127.0.0.1:7233
+  migration:
+    state-query-name: 'getMigrationState'
+    migration-signal-name: 'migrateIt'
+    target:
+      namespace: migration-demo.sdvdw
+      connection:
+        target: migration-demo.sdvdw.tmprl.cloud:7233
+        mtls:
+          key-file: /Users/mnichols/certs/migration-demo.sdvdw.key
+          cert-chain-file: /Users/mnichols/certs/migration-demo.sdvdw.pem

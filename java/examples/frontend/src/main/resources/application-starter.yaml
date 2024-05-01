@@ -1,0 +1,34 @@
+server:
+  port: 3030
+
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: temporal-frontend
+  simulation:
+    execution-count: 1
+    signal-frequency-millis: 200
+    signal-target-threshold-count: 3
+    id-seed: mig
+    simulation-task-queue: simulation
+    legacy-task-queue: default
+  temporal:
+    connection:
+      target: local
+    workers-auto-discovery:
+      packages: # intentionally left blank to avoid spring auto configure problems...i just want a client
+  migration:
+    state-query-name: 'getMigrationState'
+    result-query-name: 'getCurrentResult'
+    migration-signal-name: 'migrateIt'
+    target:
+      namespace: migration-demo.sdvdw
+      connection:
+        target: migration-demo.sdvdw.tmprl.cloud:7233
+        mtls:
+          key-file: /Users/mnichols/certs/migration-demo.sdvdw.key
+          cert-chain-file: /Users/mnichols/certs/migration-demo.sdvdw.pem
+
+

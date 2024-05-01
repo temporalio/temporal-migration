@@ -1,0 +1,8 @@
+rootProject.name = 'java'
+include 'examples'
+include 'migration'
+include 'examples:frontend'
+findProject(':examples:frontend')?.name = 'frontend'
+include 'examples:backend'
+findProject(':examples:backend')?.name = 'backend'
+
