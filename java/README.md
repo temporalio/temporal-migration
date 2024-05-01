@@ -1,5 +1,18 @@
 # temporal-migration :: Java
 
+## Structure
+
+There are two primary modules, `examples` and `migration`.
+Spring has been used to declutter the code and illustrate some more advanced autoconfigure features of Temporal Java SDK.
+
+- `migration` module contains an Temporal Interceptor that can be dropped into your worker to push 
+execution state from one Namespace to another.
+  - `interceptor` submodule has related interceptor code and should not need alot of recoding by you
+  - `support` submodule has two utility Activities that can be used to Push and Pull execution state for a signal-lossyless migration
+- `examples` module has
+  - a `backend` submodule that pretends to be a long-running workflow that needs to be migrated
+  - a `frontend` submodule that has **Starters** and **Simulator**
+
 ## Applications
 
 1. Start temporal local dev server
