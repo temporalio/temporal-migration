@@ -1,13 +1,11 @@
 # temporal-migration
 
-And you may ask yourself, "How do I migrate long-running executions from my self-hosted Temporal cluster to Temporal Cloud under load?"
+This repository aims to provide support for self-hosted Temporal users that should migrate to [Temporal Cloud](https://temporal.io/cloud).
 
-And you may ask yourself, "How do I work this?"
+It contains reusable libraries and components along with examples demonstrating their usage. Further, a Simulator is
+included to help you see how the Push/Pull approach of continuing Workflow Executions in another Namespace works.
 
-And you may tell yourself, "[This](/java) is not my beautiful Java code."
 
-And you may tell yourself, "This is not my beautiful interceptor."
-
-*java support* is [here](/java).
+*Java SDK support* is [here](/java).
 
 
